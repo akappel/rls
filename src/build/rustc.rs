@@ -22,7 +22,7 @@ use self::rustc::session::config::{self, Input, ErrorOutputType};
 use self::rustc_driver::{RustcDefaultCalls, run_compiler, run, Compilation, CompilerCalls};
 use self::rustc_driver::driver::CompileController;
 use self::rustc_save_analysis as save;
-use self::rustc_save_analysis::CallbackHandler;
+//use self::rustc_save_analysis::CallbackHandler;
 use self::syntax::ast;
 use self::syntax::codemap::{FileLoader, RealFileLoader};
 
@@ -142,7 +142,7 @@ impl<'a> CompilerCalls<'a> for RlsRustcCalls {
                         -> CompileController<'a> {
         let mut result = self.default_calls.build_controller(sess, matches);
         result.keep_ast = true;
-        let analysis = self.analysis.clone();
+//        let analysis = self.analysis.clone();
 
         result.after_analysis.callback = Box::new(move |state| {
             // There are two ways to move the data from rustc to the RLS, either
@@ -150,28 +150,28 @@ impl<'a> CompilerCalls<'a> for RlsRustcCalls {
             // the latter when there are compatibility issues between crates.
 
             // This version passes via JSON, it is more easily backwards compatible.
-            // save::process_crate(state.tcx.unwrap(),
-            //                     state.expanded_crate.unwrap(),
-            //                     state.analysis.unwrap(),
-            //                     state.crate_name.unwrap(),
-            //                     None,
-            //                     save::DumpHandler::new(state.out_dir,
-            //                                            state.crate_name.unwrap()));
-            // This version passes directly, it is more efficient.
-            save::process_crate(state.tcx.expect("missing tcx"),
-                                state.expanded_crate.expect("missing crate"),
-                                state.analysis.expect("missing analysis"),
-                                state.crate_name.expect("missing crate name"),
+            save::process_crate(state.tcx.unwrap(),
+                                state.expanded_crate.unwrap(),
+                                state.analysis.unwrap(),
+                                state.crate_name.unwrap(),
                                 None,
-                                CallbackHandler {
-                                    callback: &mut |a| {
-                                        let mut analysis = analysis.lock().unwrap();
-                                        let a = unsafe {
-                                            ::std::mem::transmute(a.clone())
-                                        };
-                                        *analysis = Some(a);
-                                    }
-                                });
+                                save::DumpHandler::new(state.out_dir,
+                                                       state.crate_name.unwrap()));
+            // This version passes directly, it is more efficient.
+            // save::process_crate(state.tcx.expect("missing tcx"),
+            //                     state.expanded_crate.expect("missing crate"),
+            //                     state.analysis.expect("missing analysis"),
+            //                     state.crate_name.expect("missing crate name"),
+            //                     None,
+            //                     CallbackHandler {
+            //                         callback: &mut |a| {
+            //                             let mut analysis = analysis.lock().unwrap();
+            //                             let a = unsafe {
+            //                                 ::std::mem::transmute(a.clone())
+            //                             };
+            //                             *analysis = Some(a);
+            //                         }
+            //                     });
         });
         result.after_analysis.run_callback_on_error = true;
         result.make_glob_map = rustc_resolve::MakeGlobMap::Yes;
